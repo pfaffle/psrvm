@@ -66,7 +66,7 @@ Description = 'A Ruby version manager written in PowerShell.'
 NestedModules = @('src\PsRvm.Core.ps1')
 
 # Functions to export from this module
-FunctionsToExport = '*'
+FunctionsToExport = 'Install-Ruby'
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'
