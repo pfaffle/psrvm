@@ -19,7 +19,7 @@ function _get_native_arch {
     }
 }
 
-function _get_latest_ruby {
+function _get_latest_ruby_version {
     $versions = _get_available_ruby_versions | Sort -Descending
     return $versions[0]
 }

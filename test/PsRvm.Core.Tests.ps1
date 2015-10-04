@@ -44,12 +44,12 @@ Describe '_get_available_ruby_versions' {
     }
 }
 
-Describe '_get_latest_ruby' {
+Describe '_get_latest_ruby_version' {
     Context 'With Ruby installers for 1.9.2-p0, 1.9.2-p290, 1.9.3-p551, and 2.2.3' {
         Mock _get_web_client -MockWith {GetMockWebClient}
 
         It 'returns 2.2.3' {
-            _get_latest_ruby | Should Be '2.2.3'
+            _get_latest_ruby_version | Should Be '2.2.3'
         }
     }
 }
