@@ -1,56 +1,6 @@
-﻿if (Get-Module psrvm) { Remove-Module psrvm }
-$rootDir = Split-Path -Resolve "$($MyInvocation.MyCommand.Path)\.."
-$srcFile = $MyInvocation.MyCommand.Path `
-        -replace 'psrvm\\test\\(.*)\.Tests\.ps1', `
-                 'psrvm\src\$1.ps1'
-. $srcFile
-
-# Helper functions
-function Mock64BitArch {
-    Mock -Verifiable `
-         -CommandName Test-Path `
-         -ParameterFilter { $Path -eq "$env:systemroot\syswow64" } `
-         -MockWith { $true }
-}
-function Mock32BitArch {
-    Mock -Verifiable `
-         -CommandName Test-Path `
-         -ParameterFilter { $Path -eq "$env:systemroot\syswow64" } `
-         -MockWith { $false }
-}
-function UndoMockArch {
-    # Undo the mock by making the mock return the actual result.
-    Mock Test-Path -ParameterFilter {$Path -eq "$env:systemroot\syswow64"} `
-                   -MockWith { Test-Path "$env:systemroot\syswow64" }
-}
-function GetMockWebClient {
-    $MockWebClient = New-Object PSCustomObject
-    $MockWebClient | Add-Member -MemberType ScriptMethod -Name DownloadString -Value {
-        param([string]$address)
-        return Get-Content "$rootDir\res\test\rubyinstaller_list.html" | Out-String
-    }
-    return $MockWebClient
-}
-function HasValues {
-    param(
-    [CmdletBinding()]
-    [String[]]$ExpectedValues,
-    [Parameter(ValueFromPipeline=$true)]
-    [String]$Actual
-    )
-    PROCESS {
-        $ActualValues += @($Actual)
-    }
-    END {
-        foreach ($Expected in $ExpectedValues) {
-            if ($ActualValues -notcontains $Expected) {
-                Write-Error "{$Expected} expected but was not encountered.`nActual: {$ActualValues}"
-                return $false
-            }
-        }
-        return $true
-    }
-}
+﻿$TEST_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+. "$TEST_DIR\TestHelper.ps1"
+. $SRC_FILE
 
 # Tests
 Describe 'PsRvm.Core' {
