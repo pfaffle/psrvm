@@ -35,6 +35,14 @@ function GetMockWebClient {
     }
     return $MockWebClient
 }
+function MockWebClient {
+    Mock -Verifiable `
+         -CommandName _get_web_client `
+         -MockWith {GetMockWebClient}
+}
+function UndoMockWebClient {
+    Mock _get_web_client {New-Object System.Net.WebClient}
+}
 
 # Assertion helper functions
 # ==========================
@@ -57,4 +65,9 @@ function HasValues {
         }
         return $true
     }
+}
+
+function Assert-MockNotCalled {
+    param([String]$CommandName)
+    Assert-MockCalled -Times 0 -CommandName $CommandName
 }

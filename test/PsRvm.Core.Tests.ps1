@@ -15,7 +15,6 @@ Describe 'PsRvm.Core' {
 Describe '_get_native_arch' {
     AfterEach {
         UndoMockArch
-        Assert-VerifiableMocks
     }
     It 'returns i386 on a 32-bit system' {
         Mock32BitArch
@@ -37,9 +36,8 @@ Describe '_get_web_client' {
 
 Describe '_get_available_ruby_versions' {
     Context 'With Ruby installers for 1.9.2-p0, 1.9.2-p290, 1.9.3-p551, and 2.2.3' {
-        Mock _get_web_client -MockWith {GetMockWebClient} -Verifiable
-
         It 'returns all available versions' {
+            MockWebClient
             _get_available_ruby_versions | HasValues @('1.9.2-p0', '1.9.2-p290', '1.9.3-p551', '2.2.3') | Should Be $true
             Assert-VerifiableMocks
         }
@@ -48,11 +46,60 @@ Describe '_get_available_ruby_versions' {
 
 Describe '_get_latest_ruby_version' {
     Context 'With Ruby installers for 1.9.2-p0, 1.9.2-p290, 1.9.3-p551, and 2.2.3' {
-        Mock _get_web_client -MockWith {GetMockWebClient} -Verifiable
-
         It 'returns 2.2.3' {
+            MockWebClient
             _get_latest_ruby_version | Should Be '2.2.3'
             Assert-VerifiableMocks
+        }
+    }
+}
+
+Describe '_get_ruby_download_url' {
+    BeforeEach {
+        MockWebClient
+    }
+    AfterEach {
+        UndoMockWebClient
+    }
+
+    # The cases that involve dynamically figuring out the most recent version
+    # will use the webclient mock (to see what's available).
+    Context 'without parameters' {
+        It 'returns the url to the latest 32-bit installer' {
+            _get_ruby_download_url |
+                Should Be 'http://dl.bintray.com/oneclick/rubyinstaller/rubyinstaller-2.2.3.exe'
+            Assert-VerifiableMocks
+        }
+    }
+
+    Context 'when requesting Ruby version 1.9.3-p551' {
+        It 'returns the url to the 32-bit Ruby 1.9.3-p551 installer' {
+            _get_ruby_download_url -Version '1.9.3-p551' |
+                Should Be 'http://dl.bintray.com/oneclick/rubyinstaller/rubyinstaller-1.9.3-p551.exe'
+            Assert-MockNotCalled _get_web_client
+        }
+    }
+
+    Context 'when requesting 64-bit Ruby but not a specific version' {
+        It 'returns the url to the latest 64-bit installer' {
+            _get_ruby_download_url -Arch x64 |
+                Should Be 'http://dl.bintray.com/oneclick/rubyinstaller/rubyinstaller-2.2.3-x64.exe'
+            Assert-VerifiableMocks
+        }
+    }
+
+    Context 'when requesting 64-bit Ruby version 2.2.3' {
+        It 'returns the url to the the 64-bit Ruby 2.2.3 installer' {
+            _get_ruby_download_url -Arch x64 -Version 2.2.3 |
+                Should Be 'http://dl.bintray.com/oneclick/rubyinstaller/rubyinstaller-2.2.3-x64.exe'
+            Assert-MockNotCalled _get_web_client
+        }
+    }
+
+    Context 'when called with an invalid arch' {
+        It 'throws an exception' {
+            {_get_ruby_download_url -Arch sparc -Version 2.2.3} | Should Throw
+            Assert-MockNotCalled _get_web_client
         }
     }
 }

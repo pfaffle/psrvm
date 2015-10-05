@@ -1,4 +1,5 @@
 ﻿$PSRVM_ROOT = "$env:userprofile\.psrvm"
+$MIRROR_URL = 'http://dl.bintray.com/oneclick/rubyinstaller'
 <#
     .SYNOPSIS
     Install a new Ruby.
@@ -25,7 +26,7 @@ function _get_latest_ruby_version {
 }
 
 function _get_available_ruby_versions {
-    $html = (_get_web_client).DownloadString('http://dl.bintray.com/oneclick/rubyinstaller/') -split "`n"
+    $html = (_get_web_client).DownloadString("$MIRROR_URL/") -split "`n"
     $versions = @()
     foreach ($line in $html) {
         if ($line -match '\<pre\>\<a onclick="navi\(event\)" href="\:rubyinstaller\-(\d\.\d\.\d(\-p\d+)?)\.exe') {
@@ -33,6 +34,25 @@ function _get_available_ruby_versions {
         }
     }
     return $versions | Sort -Unique
+}
+
+function _get_ruby_download_url {
+    param(
+        $Arch = 'i386',
+        $Version = (_get_latest_ruby_version)
+    )
+    $Url = "$MIRROR_URL/rubyinstaller-${Version}.exe"
+    switch ($Arch) {
+        'x64' {
+            $Url = $Url -Replace '\.exe', '-x64.exe'
+            break
+        } 'i386' {
+            break
+        } default {
+            throw "Invalid Arch: $Arch. Acceptable values are x64, i386"
+        }
+    }
+    return $Url
 }
 
 # For testing
