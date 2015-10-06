@@ -15,16 +15,17 @@ Describe 'PsRvm.Core' {
 Describe '_get_native_arch' {
     AfterEach {
         UndoMockArch
+        Assert-VerifiableMocks
     }
     It 'returns i386 on a 32-bit system' {
         Mock32BitArch
-        # I should really be asserting that these mocks are called, but
-        # it isn't working and I can't figure out why.
         _get_native_arch | Should Be 'i386'
+        Assert-VerifiableMocks
     }
     It 'returns x64 on a 64-bit system' {
         Mock64BitArch
         _get_native_arch | Should Be 'x64'
+        Assert-VerifiableMocks
     }
 }
 
@@ -36,20 +37,22 @@ Describe '_get_web_client' {
 
 Describe '_get_available_ruby_versions' {
     Context 'With Ruby installers for 1.9.2-p0, 1.9.2-p290, 1.9.3-p551, and 2.2.3' {
-        Mock _get_web_client -MockWith {GetMockWebClient}
+        Mock _get_web_client -MockWith {GetMockWebClient} -Verifiable
 
         It 'returns all available versions' {
             _get_available_ruby_versions | HasValues @('1.9.2-p0', '1.9.2-p290', '1.9.3-p551', '2.2.3') | Should Be $true
+            Assert-VerifiableMocks
         }
     }
 }
 
 Describe '_get_latest_ruby_version' {
     Context 'With Ruby installers for 1.9.2-p0, 1.9.2-p290, 1.9.3-p551, and 2.2.3' {
-        Mock _get_web_client -MockWith {GetMockWebClient}
+        Mock _get_web_client -MockWith {GetMockWebClient} -Verifiable
 
         It 'returns 2.2.3' {
             _get_latest_ruby_version | Should Be '2.2.3'
+            Assert-VerifiableMocks
         }
     }
 }
