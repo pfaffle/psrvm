@@ -33,6 +33,10 @@ function GetMockWebClient {
         param([string]$address)
         return Get-Content "$ROOT_DIR\res\test\rubyinstaller_list.html" | Out-String
     }
+    $MockWebClient | Add-Member -MemberType ScriptMethod -Name DownloadFile -Value {
+        param([string]$address,[string]$filePath)
+        Add-Content -Path $filePath -Value ""
+    }
     return $MockWebClient
 }
 function MockWebClient {

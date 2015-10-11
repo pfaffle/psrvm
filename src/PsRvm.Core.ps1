@@ -55,6 +55,16 @@ function _get_ruby_download_url {
     return $Url
 }
 
+function _download_ruby {
+    param(
+        [Parameter(Mandatory=$true)][String]$Path,
+        [Parameter(Mandatory=$true)][String]$Version,
+        [String]$Arch = 'i386'
+    )
+    $InstallerUrl = _get_ruby_download_url -Arch $Arch -Version $Version
+    (_get_web_client).DownloadFile($InstallerUrl, $(Join-Path $Path $(Split-Path -Leaf $InstallerUrl)))
+}
+
 # For testing
 function _get_web_client {
     return New-Object System.Net.WebClient

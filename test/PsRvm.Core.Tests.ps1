@@ -103,3 +103,36 @@ Describe '_get_ruby_download_url' {
         }
     }
 }
+
+Describe '_download_ruby' {
+    BeforeEach {
+        MockWebClient
+    }
+    AfterEach {
+        UndoMockWebClient
+    }
+
+    Context 'when requesting 32-bit Ruby version 2.2.3' {
+        It 'downloads the 32-bit installer to a temp directory' {
+            _download_ruby -Path "TestDrive:\" -Version 2.2.3 -Arch i386
+            Test-Path "TestDrive:\rubyinstaller-2.2.3.exe" | Should Be $true
+            Assert-VerifiableMocks
+        }
+    }
+
+    Context 'when requesting 64-bit Ruby version 2.2.3' {
+        It 'downloads the 64-bit installer to a temp directory' {
+            _download_ruby -Path "TestDrive:\" -Version 2.2.3 -Arch x64
+            Test-Path "TestDrive:\rubyinstaller-2.2.3-x64.exe" | Should Be $true
+            Assert-VerifiableMocks
+        }
+    }
+
+    Context 'when requesting Ruby version 2.2.3' {
+        It 'downloads the 32-bit installer to a temp directory' {
+            _download_ruby -Path "TestDrive:\" -Version 2.2.3
+            Test-Path "TestDrive:\rubyinstaller-2.2.3.exe" | Should Be $true
+            Assert-VerifiableMocks
+        }
+    }
+}
