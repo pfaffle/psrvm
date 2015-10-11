@@ -136,3 +136,41 @@ Describe '_download_ruby' {
         }
     }
 }
+
+Describe '_verify_compatible_arch' {
+    Context 'on a 64-bit system' {
+        BeforeEach {
+            Mock64BitArch
+        }
+        AfterEach {
+            UndoMockArch
+        }
+
+        It 'returns true if passed i386' {
+            _verify_compatible_arch 'i386' | Should Be $true
+            Assert-VerifiableMocks
+        }
+        It 'returns true if passed x64' {
+            _verify_compatible_arch 'x64' | Should Be $true
+            Assert-VerifiableMocks
+        }
+    }
+
+    Context 'on a 32-bit system' {
+        BeforeEach {
+            Mock32BitArch
+        }
+        AfterEach {
+            UndoMockArch
+        }
+
+        It 'returns true if passed i386' {
+            _verify_compatible_arch 'i386' | Should Be $true
+            Assert-VerifiableMocks
+        }
+        It 'throws an exception if passed x64' {
+            {_verify_compatible_arch 'x64'} | Should Throw
+            Assert-VerifiableMocks
+        }
+    }
+}

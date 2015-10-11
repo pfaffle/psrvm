@@ -20,6 +20,14 @@ function _get_native_arch {
     }
 }
 
+function _verify_compatible_arch {
+    param([String]$RubyArch)
+    if (((_get_native_arch) -eq 'i386') -and ($RubyArch -eq 'x64')) {
+        throw "Cannot install 64-bit Ruby on a 32-bit system!"
+    }
+    return $true
+}
+
 function _get_latest_ruby_version {
     $versions = _get_available_ruby_versions | Sort -Descending
     return $versions[0]
