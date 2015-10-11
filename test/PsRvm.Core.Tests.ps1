@@ -7,9 +7,6 @@ Describe 'PsRvm.Core' {
     It 'should provide the Install-Ruby command' {
         Get-Command Install-Ruby | Should Not BeNullOrEmpty
     }
-    It 'should install to a default path if one is not specified' {
-        Install-Ruby | Should Be "$env:userprofile\.psrvm"
-    }
 }
 
 Describe '_get_native_arch' {
@@ -172,5 +169,29 @@ Describe '_verify_compatible_arch' {
             {_verify_compatible_arch 'x64'} | Should Throw
             Assert-VerifiableMocks
         }
+    }
+}
+
+Describe '_run_ruby_installer' {
+    It 'should call the installer with appropriate arguments' {
+        # Mock the expected installer Start-Process call
+        Mock -Verifiable `
+         -CommandName Start-Process `
+         -MockWith { $true } `
+         -ParameterFilter {
+            ($Wait -eq $true) -and
+            ($FilePath -eq 'TestDrive:\rubyinstaller-2.2.3.exe') -and
+            ($ArgumentList -contains '/verysilent') -and
+            ($ArgumentList -contains '/tasks=addtk') -and
+            ($ArgumentList -contains "/dir=`"TestDrive:\psrvm\ruby2.2.3`"")
+        }
+        # Call the installer
+        try {
+            _run_ruby_installer -Installer 'TestDrive:\rubyinstaller-2.2.3.exe' `
+                                -TargetDir 'TestDrive:\psrvm'
+        } catch {}
+        # Assert that the mock was called, which proves 
+        # that the right installer arguments were passed in.
+        Assert-VerifiableMocks
     }
 }

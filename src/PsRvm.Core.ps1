@@ -73,6 +73,21 @@ function _download_ruby {
     (_get_web_client).DownloadFile($InstallerUrl, $(Join-Path $Path $(Split-Path -Leaf $InstallerUrl)))
 }
 
+function _run_ruby_installer {
+    param(
+        [String]$Installer,
+        [String]$TargetDir
+    )
+    (Split-Path -Leaf $Installer) -match 'rubyinstaller\-(\d\.\d\.\d(\-p\d+)?)\.exe'
+    $Version = $matches[1]
+    Start-Process `
+        -Wait `
+        -FilePath $Installer `
+        -ArgumentList @('/verysilent',
+                        '/tasks=addtk',
+                        "/dir=`"$(Join-Path $TargetDir "ruby$Version")`"")
+}
+
 # For testing
 function _get_web_client {
     return New-Object System.Net.WebClient
