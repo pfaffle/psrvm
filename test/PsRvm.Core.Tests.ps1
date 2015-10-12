@@ -132,6 +132,14 @@ Describe '_download_ruby' {
             Assert-VerifiableMocks
         }
     }
+
+    Context "when attempting to download to a directory that doesn't exist" {
+        It 'creates the directory and downloads the installer to it' {
+            _download_ruby -Path "TestDrive:\newdir" -Version 2.2.3
+            Test-Path "TestDrive:\newdir\rubyinstaller-2.2.3.exe" | Should Be $true
+            Assert-VerifiableMocks
+        }
+    }
 }
 
 Describe '_verify_compatible_arch' {
@@ -143,12 +151,12 @@ Describe '_verify_compatible_arch' {
             UndoMockArch
         }
 
-        It 'returns true if passed i386' {
-            _verify_compatible_arch 'i386' | Should Be $true
+        It 'does not throw if passed i386' {
+            {_verify_compatible_arch 'i386'} | Should Not Throw
             Assert-VerifiableMocks
         }
-        It 'returns true if passed x64' {
-            _verify_compatible_arch 'x64' | Should Be $true
+        It 'does not throw if passed x64' {
+            {_verify_compatible_arch 'x64'} | Should Not Throw
             Assert-VerifiableMocks
         }
     }
@@ -161,8 +169,8 @@ Describe '_verify_compatible_arch' {
             UndoMockArch
         }
 
-        It 'returns true if passed i386' {
-            _verify_compatible_arch 'i386' | Should Be $true
+        It 'does not throw if passed i386' {
+            {_verify_compatible_arch 'i386'} | Should Not Throw
             Assert-VerifiableMocks
         }
         It 'throws an exception if passed x64' {
@@ -183,7 +191,7 @@ Describe '_run_ruby_installer' {
             ($FilePath -eq 'TestDrive:\rubyinstaller-2.2.3.exe') -and
             ($ArgumentList -contains '/verysilent') -and
             ($ArgumentList -contains '/tasks=addtk') -and
-            ($ArgumentList -contains "/dir=`"TestDrive:\psrvm\ruby2.2.3`"")
+            ($ArgumentList -contains "/dir=`"TestDrive:\psrvm`"")
         }
         # Call the installer
         try {
@@ -192,6 +200,49 @@ Describe '_run_ruby_installer' {
         } catch {}
         # Assert that the mock was called, which proves 
         # that the right installer arguments were passed in.
+        Assert-VerifiableMocks
+    }
+}
+
+Describe '_ensure_directory_exists' {
+    It 'does not throw if the directory exists' {
+        {_ensure_directory_exists 'TestDrive:\'} | Should Not Throw
+    }
+    It 'does not throw if the directory does not exist and it creates it' {
+        {_ensure_directory_exists 'TestDrive:\newdir'} | Should Not Throw
+    }
+    It 'throws if the directory does not exist and it is unable to create it' {
+        Mock -Verifiable `
+            -CommandName Test-Path `
+            -ParameterFilter {$Path -eq 'TestDrive:\newdir'} `
+            -MockWith { $false }
+        {_ensure_directory_exists 'TestDrive:\newdir'} | Should Throw
+        Assert-VerifiableMocks
+    }
+}
+
+Describe 'Install-Ruby' {
+    BeforeEach {
+        Mock -Verifiable -CommandName _get_psrvm_root -MockWith {'TestDrive:\user\psrvm'}
+        mkdir 'TestDrive:\user'
+        Mock -Verifiable -CommandName _get_temp_dir -MockWith {'TestDrive:\temp'}
+        mkdir 'TestDrive:\temp'
+        MockWebClient
+    }
+    AfterEach {
+        UndoMockWebClient
+    }
+
+    It 'should install 32-bit Ruby 2.2.3 to the psrvm root directory by default' {
+        Mock -Verifiable `
+         -CommandName _run_ruby_installer `
+         -MockWith { mkdir 'TestDrive:\user\psrvm\ruby2.2.3' } `
+         -ParameterFilter {
+            ($Installer -eq 'TestDrive:\temp\rubyinstaller-2.2.3.exe') -and
+            ($TargetDir -eq 'TestDrive:\user\psrvm\ruby2.2.3')
+        }
+        Install-Ruby -Version 2.2.3
+        Test-Path "TestDrive:\user\psrvm\ruby2.2.3" | Should Be True
         Assert-VerifiableMocks
     }
 }

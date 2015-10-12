@@ -1,5 +1,4 @@
-﻿$PSRVM_ROOT = "$env:userprofile\.psrvm"
-$MIRROR_URL = 'http://dl.bintray.com/oneclick/rubyinstaller'
+﻿$MIRROR_URL = 'http://dl.bintray.com/oneclick/rubyinstaller'
 <#
     .SYNOPSIS
     Install a new Ruby.
@@ -7,9 +6,20 @@ $MIRROR_URL = 'http://dl.bintray.com/oneclick/rubyinstaller'
 function Install-Ruby {
     param(
         [CmdletBinding()]
-        [String]$Path = $PSRVM_ROOT
+        [String]$Version,
+        [String]$Path = $(Join-Path (_get_psrvm_root) "ruby$Version")
     )
-    $Path
+    $AvailableVersions = _get_available_ruby_versions
+    if ($AvailableVersions -notcontains $Version) {
+        throw "Unable to find installer for Ruby version $Version"
+    } else {
+        Write-Output "Installing Ruby $Version..."
+        _download_ruby -Path (_get_temp_dir) -Version $Version
+        _run_ruby_installer `
+            -Installer (Join-Path (_get_temp_dir) "rubyinstaller-$Version.exe") `
+            -TargetDir $Path
+        Write-Output "Ruby $Version was successfully installed."
+    }
 }
 
 function _get_native_arch {
@@ -25,7 +35,6 @@ function _verify_compatible_arch {
     if (((_get_native_arch) -eq 'i386') -and ($RubyArch -eq 'x64')) {
         throw "Cannot install 64-bit Ruby on a 32-bit system!"
     }
-    return $true
 }
 
 function _get_latest_ruby_version {
@@ -70,7 +79,9 @@ function _download_ruby {
         [String]$Arch = 'i386'
     )
     $InstallerUrl = _get_ruby_download_url -Arch $Arch -Version $Version
-    (_get_web_client).DownloadFile($InstallerUrl, $(Join-Path $Path $(Split-Path -Leaf $InstallerUrl)))
+    $LocalInstaller = Join-Path $Path $(Split-Path -Leaf $InstallerUrl)
+    _ensure_directory_exists $Path
+    (_get_web_client).DownloadFile($InstallerUrl, $LocalInstaller)
 }
 
 function _run_ruby_installer {
@@ -78,17 +89,33 @@ function _run_ruby_installer {
         [String]$Installer,
         [String]$TargetDir
     )
-    (Split-Path -Leaf $Installer) -match 'rubyinstaller\-(\d\.\d\.\d(\-p\d+)?)\.exe'
+    (Split-Path -Leaf $Installer) -match 'rubyinstaller\-(\d\.\d\.\d(\-p\d+)?)\.exe' | Out-Null
     $Version = $matches[1]
     Start-Process `
         -Wait `
         -FilePath $Installer `
         -ArgumentList @('/verysilent',
                         '/tasks=addtk',
-                        "/dir=`"$(Join-Path $TargetDir "ruby$Version")`"")
+                        "/dir=`"$TargetDir`"")
+}
+
+function _ensure_directory_exists {
+    param([String]$Path)
+    if (-not (Test-Path $Path)) {
+        mkdir -Force -Path $Path
+        if (-not (Test-Path $Path)) {
+            throw "Unable to create directory $Path"
+        }
+    }
 }
 
 # For testing
 function _get_web_client {
     return New-Object System.Net.WebClient
+}
+function _get_psrvm_root {
+    return Join-Path $env:userprofile 'psrvm'
+}
+function _get_temp_dir {
+    return Join-Path $env:temp 'psrvm'
 }
