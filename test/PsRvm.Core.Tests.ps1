@@ -7,6 +7,9 @@ Describe 'PsRvm.Core' {
     It 'should provide the Install-Ruby command' {
         Get-Command Install-Ruby | Should Not BeNullOrEmpty
     }
+    It 'should provide the Add-Ruby command' {
+        Get-Command Add-Ruby | Should Not BeNullOrEmpty
+    }
 }
 
 Describe '_get_native_arch' {
@@ -228,12 +231,6 @@ Describe 'Install-Ruby' {
         Mock -Verifiable -CommandName _get_temp_dir -MockWith {'TestDrive:\temp'}
         mkdir 'TestDrive:\temp'
         MockWebClient
-    }
-    AfterEach {
-        UndoMockWebClient
-    }
-
-    It 'should install 32-bit Ruby 2.2.3 to the psrvm root directory by default' {
         Mock -Verifiable `
          -CommandName _run_ruby_installer `
          -MockWith { mkdir 'TestDrive:\user\psrvm\ruby2.2.3' } `
@@ -242,7 +239,73 @@ Describe 'Install-Ruby' {
             ($TargetDir -eq 'TestDrive:\user\psrvm\ruby2.2.3')
         }
         Install-Ruby -Version 2.2.3
-        Test-Path "TestDrive:\user\psrvm\ruby2.2.3" | Should Be True
+    }
+    AfterEach {
         Assert-VerifiableMocks
+        rmdir -Recurse -Force 'TestDrive:\user'
+        rmdir -Recurse -Force 'TestDrive:\temp'
+        UndoMockWebClient
+    }
+
+    It 'should install 32-bit Ruby 2.2.3 to the psrvm root directory by default' {
+        Test-Path "TestDrive:\user\psrvm\ruby2.2.3" | Should Be True
+    }
+    It 'should add the Ruby installation to the psrvm.xml file' {
+        $Ruby = Import-Clixml 'TestDrive:\user\psrvm\psrvm.xml'
+        $Ruby.Version | Should Be 2.2.3
+    }
+}
+
+Describe '_new_ruby_object' {
+    BeforeEach {
+        $Ruby = _new_ruby_object -Version 2.2.3 -Arch i386 -Path 'TestDrive:\user\psrvm\ruby2.2.3'
+    }
+    AfterEach {
+        $Ruby = $null
+    }
+
+    It 'should have a version property' {
+        $Ruby.Version | Should Be 2.2.3
+    }
+    It 'should have an arch property' {
+        $Ruby.Arch | Should Be i386
+    }
+    It 'should have a path property' {
+        $Ruby.Path | Should Be 'TestDrive:\user\psrvm\ruby2.2.3'
+    }
+    It 'should calculate the uninstaller property' {
+        $Ruby.Uninstaller | Should Be 'TestDrive:\user\psrvm\ruby2.2.3\unins000.exe'
+    }
+}
+
+Describe 'Add-Ruby' {
+    BeforeEach {
+        Mock -Verifiable -CommandName _get_psrvm_root -MockWith {'TestDrive:\user\psrvm'}
+    }
+    AfterEach {
+        Assert-VerifiableMocks
+    }
+
+    Context 'adding one Ruby installation' {
+        BeforeEach {
+            Add-Ruby -Version 2.2.3 -Arch i386 -Path 'TestDrive:\user\psrvm\ruby2.2.3'
+            $InstalledRuby = Import-Clixml 'TestDrive:\user\psrvm\psrvm.xml'
+        }
+        AfterEach {
+            $InstalledRuby = $null
+        }
+
+        It 'retains the version' {
+            $InstalledRuby.Version | Should Be 2.2.3
+        }
+        It 'retains the arch' {
+            $InstalledRuby.Arch| Should Be i386
+        }
+        It 'retains the path' {
+            $InstalledRuby.Path | Should Be 'TestDrive:\user\psrvm\ruby2.2.3'
+        }
+        It 'retains the uninstaller path' {
+            $InstalledRuby.Uninstaller | Should Be 'TestDrive:\user\psrvm\ruby2.2.3\unins000.exe'
+        }
     }
 }

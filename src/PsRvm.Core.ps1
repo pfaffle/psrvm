@@ -18,8 +18,43 @@ function Install-Ruby {
         _run_ruby_installer `
             -Installer (Join-Path (_get_temp_dir) "rubyinstaller-$Version.exe") `
             -TargetDir $Path
+        Add-Ruby -Version $Version -Arch i386 -Path $Path
         Write-Output "Ruby $Version was successfully installed."
     }
+}
+
+<#
+    .SYNOPSIS
+    Start keeping track of an installed Ruby.
+#>
+function Add-Ruby {
+    param(
+        [Parameter(Mandatory=$true)][String]$Version,
+        [Parameter(Mandatory=$true)][String]$Arch,
+        [Parameter(Mandatory=$true)][String]$Path,
+        [String]$Uninstaller
+    )
+    $Ruby = _new_ruby_object -Version $Version -Arch $Arch -Path $Path -Uninstaller $Uninstaller
+    _ensure_directory_exists (_get_psrvm_root)
+    $Ruby | Export-Clixml -Force -Path (Join-Path (_get_psrvm_root) 'psrvm.xml')
+}
+
+function _new_ruby_object {
+    param(
+        [Parameter(Mandatory=$true)][String]$Version,
+        [Parameter(Mandatory=$true)][String]$Arch,
+        [Parameter(Mandatory=$true)][String]$Path,
+        [String]$Uninstaller
+    )
+    $Ruby = New-Object PSCustomObject
+    $Ruby | Add-Member -Name Version -Type NoteProperty -Value $Version
+    $Ruby | Add-Member -Name Arch -Type NoteProperty -Value $Arch
+    $Ruby | Add-Member -Name Path -Type NoteProperty -Value $Path
+    if ($Uninstaller -eq '') {
+        $Uninstaller = "$Path\unins000.exe"
+    }
+    $Ruby | Add-Member -Name Uninstaller -Type NoteProperty -Value $Uninstaller
+    return $Ruby
 }
 
 function _get_native_arch {
