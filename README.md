@@ -32,6 +32,8 @@ that have been installed through other means.
 Add-Ruby -Version 2.2.3 -Path 'C:\ruby2.2.3' -Arch i386
 ```
 
+### Get-Ruby
+List Ruby installations in PsRvm's config file.
 
 ## Tests
 Unit tests are written using Pester (https://github.com/pester/Pester). To run
