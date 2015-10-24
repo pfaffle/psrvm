@@ -39,6 +39,14 @@ function Add-Ruby {
     $Ruby | Export-Clixml -Force -Path (Join-Path (_get_psrvm_root) 'psrvm.xml')
 }
 
+<#
+    .SYNOPSIS
+    Show the currently installed managed Rubies.
+#>
+function Get-Ruby {
+    return Import-Clixml -Path (Join-Path (_get_psrvm_root) 'psrvm.xml')
+}
+
 function _new_ruby_object {
     param(
         [Parameter(Mandatory=$true)][String]$Version,

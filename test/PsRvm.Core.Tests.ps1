@@ -3,15 +3,6 @@
 . $SRC_FILE
 
 # Tests
-Describe 'PsRvm.Core' {
-    It 'should provide the Install-Ruby command' {
-        Get-Command Install-Ruby | Should Not BeNullOrEmpty
-    }
-    It 'should provide the Add-Ruby command' {
-        Get-Command Add-Ruby | Should Not BeNullOrEmpty
-    }
-}
-
 Describe '_get_native_arch' {
     AfterEach {
         UndoMockArch
@@ -305,6 +296,40 @@ Describe 'Add-Ruby' {
             $InstalledRuby.Path | Should Be 'TestDrive:\user\psrvm\ruby2.2.3'
         }
         It 'retains the uninstaller path' {
+            $InstalledRuby.Uninstaller | Should Be 'TestDrive:\user\psrvm\ruby2.2.3\unins000.exe'
+        }
+    }
+}
+
+Describe 'Get-Ruby' {
+    BeforeEach {
+        Mock -Verifiable -CommandName _get_psrvm_root -MockWith {'TestDrive:\user\psrvm'}
+        mkdir 'TestDrive:\user\psrvm'
+        copy "$ROOT_DIR\res\test\psrvm_one_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
+    }
+    AfterEach {
+        Assert-VerifiableMocks
+        del -Recurse -Force 'TestDrive:\user\psrvm'
+    }
+
+    Context 'with one Ruby installation' {
+        BeforeEach {
+            $InstalledRuby = Get-Ruby
+        }
+        AfterEach {
+            $InstalledRuby = $null
+        }
+
+        It 'has a version' {
+            $InstalledRuby.Version | Should Be 2.2.3
+        }
+        It 'has an arch' {
+            $InstalledRuby.Arch| Should Be i386
+        }
+        It 'has a path' {
+            $InstalledRuby.Path | Should Be 'TestDrive:\user\psrvm\ruby2.2.3'
+        }
+        It 'has an uninstaller path' {
             $InstalledRuby.Uninstaller | Should Be 'TestDrive:\user\psrvm\ruby2.2.3\unins000.exe'
         }
     }

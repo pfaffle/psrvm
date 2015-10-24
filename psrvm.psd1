@@ -12,7 +12,7 @@
 # RootModule = ''
 
 # Version number of this module.
-ModuleVersion = '0.3.0'
+ModuleVersion = '0.4.0'
 
 # ID used to uniquely identify this module
 GUID = 'cc36c15f-f781-46fc-954c-25e93dd99fa5'
@@ -66,7 +66,7 @@ Description = 'A Ruby version manager written in PowerShell.'
 NestedModules = @('src\PsRvm.Core.ps1')
 
 # Functions to export from this module
-FunctionsToExport = @('Install-Ruby','Add-Ruby')
+FunctionsToExport = @('Install-Ruby','Add-Ruby','Get-Ruby')
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'
