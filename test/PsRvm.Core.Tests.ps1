@@ -305,7 +305,6 @@ Describe 'Get-Ruby' {
     BeforeEach {
         Mock -Verifiable -CommandName _get_psrvm_root -MockWith {'TestDrive:\user\psrvm'}
         mkdir 'TestDrive:\user\psrvm'
-        copy "$ROOT_DIR\res\test\psrvm_one_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
     }
     AfterEach {
         Assert-VerifiableMocks
@@ -314,6 +313,7 @@ Describe 'Get-Ruby' {
 
     Context 'with one Ruby installation' {
         BeforeEach {
+            copy "$ROOT_DIR\res\test\psrvm_one_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
             $InstalledRuby = Get-Ruby
         }
         AfterEach {
