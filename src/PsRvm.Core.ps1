@@ -36,7 +36,7 @@ function Add-Ruby {
     )
     $Ruby = _new_ruby_object -Version $Version -Arch $Arch -Path $Path -Uninstaller $Uninstaller
     _ensure_directory_exists (_get_psrvm_root)
-    $Ruby | Export-Clixml -Force -Path (Join-Path (_get_psrvm_root) 'psrvm.xml')
+    Export-Clixml -InputObject $Ruby -Force -Path (_get_config_path)
 }
 
 <#
@@ -44,7 +44,10 @@ function Add-Ruby {
     Show the currently installed managed Rubies.
 #>
 function Get-Ruby {
-    return Import-Clixml -Path (Join-Path (_get_psrvm_root) 'psrvm.xml')
+    if (Test-Path (_get_config_path)) {
+        return @(Import-Clixml (_get_config_path))
+    }
+    return @()
 }
 
 function _new_ruby_object {
@@ -151,6 +154,11 @@ function _ensure_directory_exists {
         }
     }
 }
+
+function _get_config_path {
+    return (Join-Path (_get_psrvm_root) 'psrvm.xml')
+}
+
 
 # For testing
 function _get_web_client {

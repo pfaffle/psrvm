@@ -333,4 +333,65 @@ Describe 'Get-Ruby' {
             $InstalledRuby.Uninstaller | Should Be 'TestDrive:\user\psrvm\ruby2.2.3\unins000.exe'
         }
     }
+
+    Context 'with multiple Ruby installations' {
+        BeforeEach {
+            copy "$ROOT_DIR\res\test\psrvm_multiple_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
+            $InstalledRubies = Get-Ruby
+            $InstalledRubies.Length | Should Be 2
+        }
+        AfterEach {
+            $InstalledRubies = $null
+        }
+
+        It 'has a version for each object' {
+            foreach ($InstalledRuby in $InstalledRubies) {
+                $InstalledRuby.Version | Should Not BeNullOrEmpty
+            }
+        }
+        It 'has an arch for each object' {
+            foreach ($InstalledRuby in $InstalledRubies) {
+                $InstalledRuby.Arch | Should Not BeNullOrEmpty
+            }
+        }
+        It 'has a path for each object' {
+            foreach ($InstalledRuby in $InstalledRubies) {
+                $InstalledRuby.Path | Should Not BeNullOrEmpty
+            }
+        }
+        It 'has an uninstaller path for each object' {
+            foreach ($InstalledRuby in $InstalledRubies) {
+                $InstalledRuby.Uninstaller | Should Not BeNullOrEmpty
+            }
+        }
+    }
+
+    Context 'with no Ruby installations' {
+        BeforeEach {
+            copy "$ROOT_DIR\res\test\psrvm_no_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
+            $InstalledRubies = Get-Ruby
+            $InstalledRubies.Length | Should Be 0
+        }
+        AfterEach {
+            $InstalledRubies = $null
+        }
+
+        It 'returns nothing' {
+            $InstalledRubies | Should BeNullOrEmpty
+        }
+    }
+
+    Context 'with no config file' {
+        BeforeEach {
+            $InstalledRubies = Get-Ruby
+            $InstalledRubies.Length | Should Be 0
+        }
+        AfterEach {
+            $InstalledRubies = $null
+        }
+
+        It 'returns nothing' {
+            $InstalledRubies | Should BeNullOrEmpty
+        }
+    }
 }
