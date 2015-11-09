@@ -446,3 +446,80 @@ Describe 'Get-Ruby' {
         }
     }
 }
+
+Describe 'Uninstall-Ruby' {
+    BeforeEach {
+        Mock -Verifiable -CommandName _get_psrvm_root -MockWith {'TestDrive:\user\psrvm'}
+        mkdir 'TestDrive:\user\psrvm'
+    }
+    AfterEach {
+        Assert-VerifiableMocks
+        del -Recurse -Force 'TestDrive:\user\psrvm'
+    }
+
+    Context 'with no config file' {
+        It 'throws an exception when trying to remove a Ruby installation' {
+            {Uninstall-Ruby -Version 2.2.3} | Should Throw
+        }
+    }
+
+    Context 'with a single Ruby 2.2.3 installation' {
+        BeforeEach {
+            copy "$ROOT_DIR\res\test\psrvm_one_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
+        }
+        AfterEach {
+            del 'TestDrive:\user\psrvm\psrvm.xml'
+        }
+
+        It 'throws an exception when trying to remove a nonexistent installation' {
+            {Uninstall-Ruby -Version 1.9.3-p551} | Should Throw
+        }
+
+        It 'runs the uninstaller for an installed Ruby' {
+            MockRuby223Uninstaller
+            Uninstall-Ruby -Version 2.2.3
+            Assert-VerifiableMocks
+        }
+
+        It 'removes the Ruby installation from the config file' {
+            MockRuby223Uninstaller
+            Uninstall-Ruby -Version 2.2.3
+            Get-Ruby | Select -Expand Version | DoesNotHaveValues @('2.2.3') | Should Be $true
+        }
+
+        It 'leaves no Rubies installed' {
+            MockRuby223Uninstaller
+            Uninstall-Ruby -Version 2.2.3
+            Get-Ruby | Should BeNullOrEmpty
+        }
+    }
+
+    Context 'with several Rubies' {
+        BeforeEach {
+            copy "$ROOT_DIR\res\test\psrvm_multiple_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
+        }
+        AfterEach {
+            del 'TestDrive:\user\psrvm\psrvm.xml'
+        }
+
+        It 'throws an exception when trying to remove a nonexistent installation' {
+            {Uninstall-Ruby -Version 1.9.2} | Should Throw
+        }
+
+        It 'runs the uninstaller for an installed Ruby' {
+            MockRuby223Uninstaller
+            Uninstall-Ruby -Version 2.2.3
+            Assert-VerifiableMocks
+        }
+        It 'removes the Ruby installation from the config file' {
+            MockRuby223Uninstaller
+            Uninstall-Ruby -Version 2.2.3
+            Get-Ruby | Select -Expand Version | DoesNotHaveValues @('2.2.3') | Should Be $true
+        }
+        It 'leaves other installed Rubies alone' {
+            MockRuby223Uninstaller
+            Uninstall-Ruby -Version 2.2.3
+            Get-Ruby | Select -Expand Version | HasValues @('1.9.3-p551') | Should Be $true
+        }
+    }
+}

@@ -47,6 +47,14 @@ function MockWebClient {
 function UndoMockWebClient {
     Mock _get_web_client {New-Object System.Net.WebClient}
 }
+function MockRuby223Uninstaller {
+    Mock -Verifiable `
+         -CommandName _run_ruby_uninstaller `
+         -MockWith { $true } `
+         -ParameterFilter {
+            ($Uninstaller -eq 'TestDrive:\user\psrvm\ruby2.2.3\unins000.exe')
+         }
+}
 
 # Assertion helper functions
 # ==========================
@@ -64,6 +72,27 @@ function HasValues {
         foreach ($Expected in $ExpectedValues) {
             if ($ActualValues -notcontains $Expected) {
                 Write-Error "{$Expected} expected but was not encountered.`nActual: {$ActualValues}"
+                return $false
+            }
+        }
+        return $true
+    }
+}
+
+function DoesNotHaveValues {
+    param(
+    [CmdletBinding()]
+    [String[]]$ExpectedNotPresentValues,
+    [Parameter(ValueFromPipeline=$true)]
+    [String]$Actual
+    )
+    PROCESS {
+        $ActualValues += @($Actual)
+    }
+    END {
+        foreach ($Unexpected in $ExpectedNotPresentValues) {
+            if ($ActualValues -contains $Unexpected) {
+                Write-Error "{$Unexpected} was expected to be missing, but was encountered.`nActual: {$ActualValues}"
                 return $false
             }
         }

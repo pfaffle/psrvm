@@ -52,6 +52,38 @@ function Get-Ruby {
     return @($Rubies)
 }
 
+<#
+    .SYNOPSIS
+    Uninstall managed Rubies.
+#>
+function Uninstall-Ruby {
+    param(
+        $Version
+    )
+    $Rubies = @(Get-Ruby)
+    if ($Rubies.Count -eq 0) {
+        throw "There are no managed Ruby installations to uninstall!"
+    }
+    $RubiesToRemove = @()
+    $RubiesRemaining = @()
+    foreach ($Ruby in $Rubies) {
+        if ($Ruby.Version -eq $Version) {
+            $RubiesToRemove += $Ruby
+        } else {
+            $RubiesRemaining += $Ruby
+        }
+    }
+    if ($RubiesToRemove.Count -eq 0) {
+        throw "No Ruby installation that meets the specified criteria was found."
+    }
+    Write-Output "Uninstalling Ruby $Version..."
+    foreach ($RubyToRemove in $RubiesToRemove) {
+        _run_ruby_uninstaller ($RubyToRemove.Uninstaller)
+    }
+    $RubiesRemaining | Export-Clixml -Force -Path (_get_config_path)
+    Write-Output "Ruby $Version was successfully uninstalled."
+}
+
 function _new_ruby_object {
     param(
         [Parameter(Mandatory=$true)][String]$Version,
@@ -137,14 +169,20 @@ function _run_ruby_installer {
         [String]$Installer,
         [String]$TargetDir
     )
-    (Split-Path -Leaf $Installer) -match 'rubyinstaller\-(\d\.\d\.\d(\-p\d+)?)\.exe' | Out-Null
-    $Version = $matches[1]
     Start-Process `
         -Wait `
         -FilePath $Installer `
         -ArgumentList @('/verysilent',
                         '/tasks=addtk',
                         "/dir=`"$TargetDir`"")
+}
+
+function _run_ruby_uninstaller {
+    param(
+        [String]$Uninstaller
+    )
+    $Proc = Start-Process -Wait -FilePath $Uninstaller -ArgumentList @('/verysilent') -PassThru
+    if ($Proc.ExitCode -ne 0) { throw "Ruby uninstall failed!" }
 }
 
 function _ensure_directory_exists {
