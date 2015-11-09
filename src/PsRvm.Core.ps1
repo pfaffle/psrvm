@@ -34,9 +34,10 @@ function Add-Ruby {
         [Parameter(Mandatory=$true)][String]$Path,
         [String]$Uninstaller
     )
-    $Ruby = _new_ruby_object -Version $Version -Arch $Arch -Path $Path -Uninstaller $Uninstaller
     _ensure_directory_exists (_get_psrvm_root)
-    Export-Clixml -InputObject $Ruby -Force -Path (_get_config_path)
+    $Rubies = @(Get-Ruby)
+    $Rubies += (_new_ruby_object -Version $Version -Arch $Arch -Path $Path -Uninstaller $Uninstaller)
+    $Rubies | Export-Clixml -Force -Path (_get_config_path)
 }
 
 <#
@@ -44,10 +45,11 @@ function Add-Ruby {
     Show the currently installed managed Rubies.
 #>
 function Get-Ruby {
+    $Rubies = @()
     if (Test-Path (_get_config_path)) {
-        return @(Import-Clixml (_get_config_path))
+        $Rubies = @(Import-Clixml (_get_config_path) | Where-Object { $_ -ne $null })
     }
-    return @()
+    return @($Rubies)
 }
 
 function _new_ruby_object {

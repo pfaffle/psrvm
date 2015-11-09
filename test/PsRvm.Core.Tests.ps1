@@ -272,13 +272,16 @@ Describe '_new_ruby_object' {
 Describe 'Add-Ruby' {
     BeforeEach {
         Mock -Verifiable -CommandName _get_psrvm_root -MockWith {'TestDrive:\user\psrvm'}
+        mkdir 'TestDrive:\user\psrvm'
     }
     AfterEach {
         Assert-VerifiableMocks
+        del -Recurse -Force 'TestDrive:\user\psrvm'
     }
 
-    Context 'adding one Ruby installation' {
+    Context 'adding one Ruby installation with no existing installation' {
         BeforeEach {
+            copy "$ROOT_DIR\res\test\psrvm_no_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
             Add-Ruby -Version 2.2.3 -Arch i386 -Path 'TestDrive:\user\psrvm\ruby2.2.3'
             $InstalledRuby = Import-Clixml 'TestDrive:\user\psrvm\psrvm.xml'
         }
@@ -299,6 +302,53 @@ Describe 'Add-Ruby' {
             $InstalledRuby.Uninstaller | Should Be 'TestDrive:\user\psrvm\ruby2.2.3\unins000.exe'
         }
     }
+
+    Context 'adding a Ruby installation with an existing installation' {
+        BeforeEach {
+            copy "$ROOT_DIR\res\test\psrvm_one_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
+            Add-Ruby -Version 1.9.3-p551 -Arch i386 -Path 'TestDrive:\user\psrvm\ruby1.9.3-p551'
+            $InstalledRubies = @(Import-Clixml 'TestDrive:\user\psrvm\psrvm.xml')
+            $InstalledRubies.Length | Should Be 2
+        }
+        AfterEach {
+            $InstalledRubies = $null
+        }
+
+        It 'should have a version for both Ruby installations' {
+            $InstalledRubies | Select -Expand Version |
+                HasValues @('1.9.3-p551','2.2.3') | Should Be $true
+        }
+        It 'should have an arch for both Ruby installations' {
+            $InstalledRubies | Select -Expand Arch |
+                HasValues @('i386','i386') | Should Be $true
+        }
+        It 'should have a path for both Ruby installations' {
+            $InstalledRubies | Select -Expand Path |
+                HasValues @(
+                    'TestDrive:\user\psrvm\ruby1.9.3-p551',
+                    'TestDrive:\user\psrvm\ruby2.2.3') | Should Be $true
+        }
+        It 'should have an uninstaller path for both Ruby installations' {
+            $InstalledRubies | Select -Expand Uninstaller |
+                HasValues @(
+                    'TestDrive:\user\psrvm\ruby1.9.3-p551\unins000.exe',
+                    'TestDrive:\user\psrvm\ruby2.2.3\unins000.exe') | Should Be $true
+        }
+    }
+
+    Context 'adding one Ruby installation with no config file' {
+        BeforeEach {
+            $InstalledRubies = @(Get-Ruby)
+            $InstalledRubies.Length | Should Be 0
+        }
+        AfterEach {
+            $InstalledRubies = $null
+        }
+
+        It 'returns nothing' {
+            $InstalledRubies | Should BeNullOrEmpty
+        }
+    }
 }
 
 Describe 'Get-Ruby' {
@@ -314,7 +364,8 @@ Describe 'Get-Ruby' {
     Context 'with one Ruby installation' {
         BeforeEach {
             copy "$ROOT_DIR\res\test\psrvm_one_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
-            $InstalledRuby = Get-Ruby
+            $InstalledRuby = @(Get-Ruby)
+            $InstalledRuby.Length | Should Be 1
         }
         AfterEach {
             $InstalledRuby = $null
@@ -337,7 +388,7 @@ Describe 'Get-Ruby' {
     Context 'with multiple Ruby installations' {
         BeforeEach {
             copy "$ROOT_DIR\res\test\psrvm_multiple_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
-            $InstalledRubies = Get-Ruby
+            $InstalledRubies = @(Get-Ruby)
             $InstalledRubies.Length | Should Be 2
         }
         AfterEach {
@@ -369,7 +420,7 @@ Describe 'Get-Ruby' {
     Context 'with no Ruby installations' {
         BeforeEach {
             copy "$ROOT_DIR\res\test\psrvm_no_ruby.xml" 'TestDrive:\user\psrvm\psrvm.xml'
-            $InstalledRubies = Get-Ruby
+            $InstalledRubies = @(Get-Ruby)
             $InstalledRubies.Length | Should Be 0
         }
         AfterEach {
@@ -383,7 +434,7 @@ Describe 'Get-Ruby' {
 
     Context 'with no config file' {
         BeforeEach {
-            $InstalledRubies = Get-Ruby
+            $InstalledRubies = @(Get-Ruby)
             $InstalledRubies.Length | Should Be 0
         }
         AfterEach {
