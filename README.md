@@ -22,6 +22,13 @@ A complete example:
 Install-Ruby -Version 2.2.3 -Path 'C:\ruby2.2.3'
 ```
 
+### Uninstall-Ruby
+Uninstall a Ruby installation. Currently only supports uninstalling by a version number.
+
+```powershell
+Uninstall-Ruby -Version 2.2.3
+```
+
 ### Add-Ruby
 Add a Ruby installation to PsRvm's config file so that it "knows" about it and
 can manage it. Note that this is automatically done for Rubies that have been
