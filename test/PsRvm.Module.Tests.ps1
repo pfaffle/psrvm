@@ -19,4 +19,7 @@ Describe "PsRvm.Module" {
     It 'should provide the Get-Ruby command' {
         Get-Command Get-Ruby | Should Not BeNullOrEmpty
     }
+    It 'should provide the Uninstall-Ruby command' {
+        Get-Command Uninstall-Ruby | Should Not BeNullOrEmpty
+    }
 }
